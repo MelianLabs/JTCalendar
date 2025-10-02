@@ -188,8 +188,109 @@ static NSString *const kJTCalendarDaySelected = @"kJTCalendarDaySelected";
     }
 }
 
+- (void)resetPreviousConfiguration {
+    isSelected = NO;
+
+    self.userInteractionEnabled = YES;
+    
+    // Clear all colors and transforms
+    circleView.color = UIColor.clearColor;
+    circleView.transform = CGAffineTransformIdentity;
+    circleView.layer.opacity = 1.0;
+    
+    dotView.hidden = YES;
+    dotView.color = UIColor.clearColor;
+    dotView.transform = CGAffineTransformIdentity;
+    
+    // Default text label appearance
+    textLabel.textColor = [self.calendarManager.calendarAppearance dayTextColor];
+    textLabel.font = self.calendarManager.calendarAppearance.dayTextFont;
+    textLabel.textAlignment = NSTextAlignmentCenter;
+    
+    // Background view reset
+    backgroundView.backgroundColor = self.calendarManager.calendarAppearance.dayBackgroundColor;
+    backgroundView.layer.borderWidth = self.calendarManager.calendarAppearance.dayBorderWidth;
+    backgroundView.layer.borderColor = self.calendarManager.calendarAppearance.dayBorderColor.CGColor;
+}
+
+
+- (void)setEnabled:(BOOL)enabled {
+    [self resetPreviousConfiguration];
+    self.userInteractionEnabled = enabled;
+
+    // Default text color
+    textLabel.textColor = enabled
+        ? [self.calendarManager.calendarAppearance dayTextColor]
+        : [self.calendarManager.calendarAppearance dayTextColorOtherMonth];
+
+    // Get beginDate from the dataSource
+    NSDate *beginDate = nil;
+    NSDate *selectedDate = nil;
+    
+    if ([self.calendarManager.dataSource respondsToSelector:@selector(viewModelBeginDate)]) {
+        beginDate = [self.calendarManager.dataSource viewModelBeginDate];
+    }
+    
+    if([self.calendarManager.dataSource respondsToSelector:@selector(allGroupedDates)]) {
+        NSArray *dates = [self.calendarManager.dataSource allGroupedDates];
+        for (NSDate *date in dates) {
+            selectedDate = date;
+            if (selectedDate && [self isSameDate:selectedDate]) {
+                circleView.color = [UIColor blackColor];
+                textLabel.textColor = [UIColor whiteColor];
+            }
+        }
+    }
+
+    // Compare and highlight if this is the beginDate
+    if (beginDate && [self isSameDate:beginDate]) {
+        circleView.color = [UIColor colorWithRed:0x33/256. green:0xB3/256. blue:0xEC/256. alpha:1.0];
+        textLabel.textColor = [UIColor whiteColor];
+    }
+}
+
+- (void)setManualSelected:(BOOL)isInSelectedSet
+             selectedDate:(NSDate *)selectedDate
+               andEnabled:(BOOL)enabled {
+    
+    self.userInteractionEnabled = enabled;
+    
+    if (!enabled) {
+        circleView.color = [UIColor clearColor];
+        textLabel.textColor = [self.calendarManager.calendarAppearance dayTextColorOtherMonth];
+        return;
+    }
+    
+    if (!isInSelectedSet) {
+        // Not selected at all → clear
+        circleView.color = [UIColor clearColor];
+        textLabel.textColor = [self.calendarManager.calendarAppearance dayTextColor];
+        isSelected = NO;
+        return;
+    }
+    
+    // Now we know it's in selectedDates set
+    if ([self isSameDate:selectedDate]) {
+        // This is the most recently tapped one → blue
+        circleView.color = [UIColor colorWithRed:0x33/256. green:0xB3/256. blue:0xEC/256. alpha:1.0];
+        textLabel.textColor = [UIColor whiteColor];
+    } else {
+        // Previously tapped selected date → black
+        circleView.color = [UIColor blackColor];
+        textLabel.textColor = [UIColor whiteColor];
+    }
+    
+    isSelected = YES;
+}
+
+
 - (void)setSelected:(BOOL)selected animated:(BOOL)animated
 {
+    if ([self.calendarManager.dataSource respondsToSelector:@selector(isCustomCalendar)]
+        && [self.calendarManager.dataSource isCustomCalendar]) {
+        return;
+    }
+    
     if(isSelected == selected){
         animated = NO;
     }
@@ -265,6 +366,11 @@ static NSString *const kJTCalendarDaySelected = @"kJTCalendarDaySelected";
 - (void)reloadData
 {
     dotView.hidden = ![self.calendarManager.dataCache haveEvent:self.date];
+    
+    if ([self.calendarManager.dataSource respondsToSelector:@selector(isCustomCalendar)]
+        && [self.calendarManager.dataSource isCustomCalendar]) {
+        return;
+    }
     
     BOOL selected = [self isSameDate:[self.calendarManager currentDateSelected]];
     [self setSelected:selected animated:NO];

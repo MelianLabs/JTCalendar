@@ -18,7 +18,7 @@
 
 @implementation JTCalendar
 
-- (instancetype)init
+- (instancetype)init:(NSNumber*)numberOfPages
 {
     self = [super init];
     if(!self){
@@ -29,6 +29,7 @@
     self->_calendarAppearance = [JTCalendarAppearance new];
     self->_dataCache = [JTCalendarDataCache new];
     self.dataCache.calendarManager = self;
+    [self setCustomNumberOfPages:numberOfPages];
     
     return self;
 }
@@ -45,6 +46,8 @@
     [self->_menuMonthsView setDelegate:nil];
     [self->_menuMonthsView setCalendarManager:nil];
     
+    [self->_menuMonthsView setCustomNumberOfPages:self.customNumberOfPages];
+    
     self->_menuMonthsView = menuMonthsView;
     [self->_menuMonthsView setDelegate:self];
     [self->_menuMonthsView setCalendarManager:self];
@@ -60,6 +63,8 @@
 {
     [self->_contentView setDelegate:nil];
     [self->_contentView setCalendarManager:nil];
+    
+    [self->_contentView setCustomNumberOfPages:self.customNumberOfPages];
     
     self->_contentView = contentView;
     [self->_contentView setDelegate:self];
@@ -149,7 +154,12 @@
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView
 {
-    [self updatePage];
+    if ([self.dataSource respondsToSelector:@selector(isCustomCalendar)]
+        && [self.dataSource isCustomCalendar]) {
+        [self updatePageForCustomCalendar];
+    } else {
+        [self updatePage];
+    }
 }
 
 - (void)updatePage
@@ -158,7 +168,7 @@
     CGFloat fractionalPage = self.contentView.contentOffset.x / pageWidth;
         
     int currentPage = roundf(fractionalPage);
-    if (currentPage == (NUMBER_PAGES_LOADED / 2)){
+    if (currentPage == ([self.customNumberOfPages integerValue] / 2)){
         if(!self.calendarAppearance.isWeekMode){
             self.menuMonthsView.scrollEnabled = YES;
         }
@@ -173,10 +183,10 @@
     dayComponent.day = 0;
     
     if(!self.calendarAppearance.isWeekMode){
-        dayComponent.month = currentPage - (NUMBER_PAGES_LOADED / 2);
+        dayComponent.month = currentPage - ([self.customNumberOfPages integerValue] / 2);
     }
     else{
-        dayComponent.day = 7 * (currentPage - (NUMBER_PAGES_LOADED / 2));
+        dayComponent.day = 7 * (currentPage - ([self.customNumberOfPages integerValue] / 2));
     }
     
     if(self.calendarAppearance.readFromRightToLeft){
@@ -193,26 +203,41 @@
     }
     self.contentView.scrollEnabled = YES;
     
-    if(currentPage < (NUMBER_PAGES_LOADED / 2)){
+    if(currentPage < ([self.customNumberOfPages integerValue] / 2)){
         if([self.dataSource respondsToSelector:@selector(calendarDidLoadPreviousPage)]){
             [self.dataSource calendarDidLoadPreviousPage];
         }
     }
-    else if(currentPage > (NUMBER_PAGES_LOADED / 2)){
+    else if(currentPage > ([self.customNumberOfPages integerValue] / 2)){
         if([self.dataSource respondsToSelector:@selector(calendarDidLoadNextPage)]){
             [self.dataSource calendarDidLoadNextPage];
         }
     }
 }
 
+-(void)updatePageForCustomCalendar {
+    
+    if (self.customNumberOfPages) {
+        NSLog(@"CustomPagesInitiated");
+    }
+    [self.dataSource isCustomCalendar];
+}
+
 - (void)repositionViews
 {
-    // Position to the middle page
-    CGFloat pageWidth = CGRectGetWidth(self.contentView.frame);
-    self.contentView.contentOffset = CGPointMake(pageWidth * ((NUMBER_PAGES_LOADED / 2)), self.contentView.contentOffset.y);
     
-    CGFloat menuPageWidth = CGRectGetWidth([self.menuMonthsView.subviews.firstObject frame]);
-    self.menuMonthsView.contentOffset = CGPointMake(menuPageWidth * ((NUMBER_PAGES_LOADED / 2)), self.menuMonthsView.contentOffset.y);
+    if ([self.dataSource respondsToSelector:@selector(isCustomCalendar)]
+        && [self.dataSource isCustomCalendar]) {
+        self.contentView.contentOffset = CGPointMake(0, self.contentView.contentOffset.y);
+        self.menuMonthsView.contentOffset = CGPointMake(0, self.menuMonthsView.contentOffset.y);
+    } else {
+        // Position to the middle page
+        CGFloat pageWidth = CGRectGetWidth(self.contentView.frame);
+        self.contentView.contentOffset = CGPointMake(pageWidth * (([self.customNumberOfPages integerValue] / 2)), self.contentView.contentOffset.y);
+        
+        CGFloat menuPageWidth = CGRectGetWidth([self.menuMonthsView.subviews.firstObject frame]);
+        self.menuMonthsView.contentOffset = CGPointMake(menuPageWidth * (([self.customNumberOfPages integerValue] / 2)), self.menuMonthsView.contentOffset.y);
+    }
 }
 
 - (void)loadNextMonth
@@ -230,7 +255,7 @@
     self.menuMonthsView.scrollEnabled = NO;
     
     CGRect frame = self.contentView.frame;
-    frame.origin.x = frame.size.width * ((NUMBER_PAGES_LOADED / 2) + 1);
+    frame.origin.x = frame.size.width * (([self.customNumberOfPages integerValue] / 2) + 1);
     frame.origin.y = 0;
     [self.contentView scrollRectToVisible:frame animated:YES];
 }
@@ -240,7 +265,7 @@
     self.menuMonthsView.scrollEnabled = NO;
     
     CGRect frame = self.contentView.frame;
-    frame.origin.x = frame.size.width * ((NUMBER_PAGES_LOADED / 2) - 1);
+    frame.origin.x = frame.size.width * (([self.customNumberOfPages integerValue] / 2) - 1);
     frame.origin.y = 0;
     [self.contentView scrollRectToVisible:frame animated:YES];
 }

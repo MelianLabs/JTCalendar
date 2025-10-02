@@ -53,7 +53,7 @@
     self.pagingEnabled = YES;
     self.clipsToBounds = YES;
     
-    for(int i = 0; i < NUMBER_PAGES_LOADED; ++i){
+    for(int i = 0; i < [self.customNumberOfPages integerValue]; ++i){
         JTCalendarMenuMonthView *monthView = [JTCalendarMenuMonthView new];
                 
         [self addSubview:monthView];
@@ -94,7 +94,7 @@
         }
     }
     
-    self.contentSize = CGSizeMake(width * NUMBER_PAGES_LOADED, height);
+    self.contentSize = CGSizeMake(width * [self.customNumberOfPages integerValue], height);
 }
 
 - (void)setCurrentDate:(NSDate *)currentDate
@@ -104,10 +104,10 @@
     NSCalendar *calendar = self.calendarManager.calendarAppearance.calendar;
     NSDateComponents *dayComponent = [NSDateComponents new];
     
-    for(int i = 0; i < NUMBER_PAGES_LOADED; ++i){
+    for(int i = 0; i < [self.customNumberOfPages integerValue]; ++i){
         JTCalendarMenuMonthView *monthView = monthsViews[i];
         
-        dayComponent.month = i - (NUMBER_PAGES_LOADED / 2);
+        dayComponent.month = i - ([self.customNumberOfPages integerValue] / 2);
         NSDate *monthDate = [calendar dateByAddingComponents:dayComponent toDate:self.currentDate options:0];
         [monthView setCurrentDate:monthDate];
     }

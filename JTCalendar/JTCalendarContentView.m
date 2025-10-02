@@ -41,9 +41,28 @@
         return nil;
     }
     
-    [self commonInit];
+    //[self commonInit];
+    [self configureWithPages:@5];
     
     return self;
+}
+
+- (instancetype)initWithPages:(NSNumber*)customNumberOfPages
+{
+    [self setCustomNumberOfPages:customNumberOfPages];
+    self = [super init];
+    return self;
+}
+
+- (void) configureWithPages:(NSNumber*)numberOfPages {
+    
+    for (UIView *view in monthsViews) {
+         [view removeFromSuperview];
+     }
+     [monthsViews removeAllObjects];
+    
+    [self setCustomNumberOfPages:numberOfPages];
+    [self commonInit];
 }
 
 - (void)commonInit
@@ -55,7 +74,7 @@
     self.pagingEnabled = YES;
     self.clipsToBounds = YES;
     
-    for(int i = 0; i < NUMBER_PAGES_LOADED; ++i){
+    for(int i = 0; i < [self.customNumberOfPages integerValue]; ++i){
         JTCalendarMonthView *monthView = [JTCalendarMonthView new];
         [self addSubview:monthView];
         [monthsViews addObject:monthView];
@@ -90,7 +109,7 @@
         }
     }
     
-    self.contentSize = CGSizeMake(width * NUMBER_PAGES_LOADED, height);
+    self.contentSize = CGSizeMake(width * [self.customNumberOfPages integerValue], height);
 }
 
 - (void)setCurrentDate:(NSDate *)currentDate
@@ -99,20 +118,25 @@
 
     NSCalendar *calendar = self.calendarManager.calendarAppearance.calendar;
     
-    for(int i = 0; i < NUMBER_PAGES_LOADED; ++i){
+    for(int i = 0; i < [self.customNumberOfPages integerValue]; ++i){
         JTCalendarMonthView *monthView = monthsViews[i];
         
         NSDateComponents *dayComponent = [NSDateComponents new];
         
         if(!self.calendarManager.calendarAppearance.isWeekMode){
-            dayComponent.month = i - (NUMBER_PAGES_LOADED / 2);
+            if ([self.calendarManager.dataSource respondsToSelector:@selector(isCustomCalendar)]
+                && [self.calendarManager.dataSource isCustomCalendar]) {
+                dayComponent.month = i;
+            } else {
+                dayComponent.month = i - ([self.customNumberOfPages integerValue] / 2);
+            }
          
             NSDate *monthDate = [calendar dateByAddingComponents:dayComponent toDate:self.currentDate options:0];
             monthDate = [self beginningOfMonth:monthDate];
             [monthView setBeginningOfMonth:monthDate];
         }
         else{
-            dayComponent.day = 7 * (i - (NUMBER_PAGES_LOADED / 2));
+            dayComponent.day = 7 * (i - ([self.customNumberOfPages integerValue] / 2));
             
             NSDate *monthDate = [calendar dateByAddingComponents:dayComponent toDate:self.currentDate options:0];
             monthDate = [self beginningOfWeek:monthDate];

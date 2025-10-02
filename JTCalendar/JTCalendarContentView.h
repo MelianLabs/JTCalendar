@@ -15,6 +15,11 @@
 
 @property (nonatomic) NSDate *currentDate;
 
+@property (nonatomic) NSNumber *customNumberOfPages;
+
+- (instancetype)initWithPages:(NSNumber*)customNumberOfPages;
+- (void) configureWithPages:(NSNumber*)numberOfPages;
+
 - (void)reloadData;
 - (void)reloadAppearance;
 

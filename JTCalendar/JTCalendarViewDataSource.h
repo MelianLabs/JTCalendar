@@ -8,6 +8,7 @@
 #import <Foundation/Foundation.h>
 
 @class JTCalendar;
+@class JTCalendarDayView;
 
 @protocol JTCalendarDataSource <NSObject>
 
@@ -17,6 +18,12 @@
 @optional
 
 - (BOOL)calendar:(JTCalendar *)calendar canSelectDate:(NSDate *)date;
+
+- (void)calendar:(JTCalendar *)calendar prepareDayView:(JTCalendarDayView *)dayView;
+
+- (NSDate *)viewModelBeginDate;
+- (NSArray *)allGroupedDates;
+- (BOOL)isCustomCalendar;
 
 - (void)calendarDidLoadPreviousPage;
 - (void)calendarDidLoadNextPage;

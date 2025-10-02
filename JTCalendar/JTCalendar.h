@@ -28,6 +28,10 @@
 @property (nonatomic, readonly) JTCalendarDataCache *dataCache;
 @property (nonatomic, readonly) JTCalendarAppearance *calendarAppearance;
 
+@property (nonatomic) NSNumber *customNumberOfPages;
+
+- (instancetype)init:(NSNumber*)numberOfPages;
+
 - (void)reloadData;
 - (void)reloadAppearance;
 
